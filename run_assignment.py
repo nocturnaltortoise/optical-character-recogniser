@@ -27,8 +27,6 @@ test1_boxes = np.loadtxt('data/test1.dat', dtype={'names': ('labels', 'left', 'b
 test2_boxes = np.loadtxt('data/test2.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                                   'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
 
-plt.imshow(test1, cmap=cm.Greys_r)
-plt.show()
 
 def find_words(chars, boxes):
     words = []
