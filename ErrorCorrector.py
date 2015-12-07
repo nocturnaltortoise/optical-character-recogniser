@@ -4,7 +4,7 @@ import numpy as np
 class ErrorCorrector:
 
     def __init__(self):
-        self.common_words = np.loadtxt('count_1w.txt', dtype={'names': ('word', 'frequency'),
+        self.common_words = np.loadtxt('data/count_1w.txt', dtype={'names': ('word', 'frequency'),
                                                               'formats': ('S20', np.int)})
         self.frequencies = self.common_words["frequency"]
         self.dictionary = self.common_words["word"]
