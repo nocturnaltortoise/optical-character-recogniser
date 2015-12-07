@@ -1,3 +1,12 @@
+# Pycharm folders
+.idea/
+
+#Numpy files
+*.npy
+
+#Scratch code
+scratch.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
