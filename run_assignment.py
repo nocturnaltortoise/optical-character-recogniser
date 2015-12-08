@@ -41,7 +41,11 @@ def find_words(chars, boxes):
 
 def find_dimensions(boxes):
 
-    """Find the maximum height and width of any character from their bounding boxes."""
+    """Find the maximum height and width of any character from their bounding boxes.
+
+    Args
+    @param boxes: the bounding boxes to find dimensions for.
+    """
 
     current_max_width = 0
     current_max_height = 0
@@ -57,8 +61,16 @@ def find_dimensions(boxes):
 
 def generate_padded_images(input_data, boxes, result_array, max_width, max_height):
 
-    """Pad out and reshape (ravel) images to fit an array of equal sized 1-d feature vectors."""
+    """Pad out and reshape (ravel) images to fit an array of equal sized 1-d feature vectors.
 
+    Args
+    @param input_data: the images to be separated and padded
+    @param boxes: the bounding boxes for each of the characters within the input data
+    @param result_array: the padded and flattened feature vectors for each image
+    @param max_width: the maximum width of any bounding box
+    @param max_height: the maximum height of any bounding box
+
+    """
     for i in xrange(boxes.shape[0]):
         left = boxes[i]["left"]
         right = boxes[i]["right"]
@@ -84,7 +96,12 @@ def prepare_images(page_data, page_boxes, max_width, max_height):
 
 def generate_eigenletters(train_data, feature_number):
 
-    """Generate eigenvalues from covariance matrix of training data."""
+    """Generate eigenvalues from covariance matrix of training data.
+
+    Args
+    @param train_data: the padded feature vectors of all the character images
+    @param feature_number: number of PCA axes to use
+    """
     covx = np.cov(train_data, rowvar=0)
     cov_size = covx.shape[0]
     eigenvalues, eigenvectors = la.eigh(covx, eigvals=(cov_size - feature_number, cov_size - 1))
@@ -93,6 +110,7 @@ def generate_eigenletters(train_data, feature_number):
 
 
 def run_pca(num_features):
+    print "Running PCA..."
     eigenletters = generate_eigenletters(images, num_features)
     pcatrain_data = np.dot((images - np.mean(images)), eigenletters)
     pcatest_data = np.dot((test_page1_prepared - np.mean(images)), eigenletters)
@@ -103,8 +121,16 @@ def run_pca(num_features):
 def classify(train, train_data_labels, test, test_data_labels, features=None):
 
     """Nearest neighbour classification implementation
-        by Jon Barker (http://staffwww.dcs.shef.ac.uk/people/J.Barker/)"""
+        by Jon Barker (http://staffwww.dcs.shef.ac.uk/people/J.Barker/)
 
+    @param train: the training data for the classifier
+    @param train_data_labels: the labels for the training data characters
+    @param test: the testing data to compare with the training data
+    @param test_data_labels: the labels of the testing data characters
+    @param features: the number of features to classify on, if features=None then all the features are used
+
+    returns: (score, labels) - a percentage correct (predicted labels compared to actual) and the classifier's labels
+    """
     # Use all features if no feature parameter has been supplied
     if features is None:
         features = np.arange(0, train.shape[1])
@@ -121,9 +147,9 @@ def classify(train, train_data_labels, test, test_data_labels, features=None):
     dist = x/np.outer(modtest, modtrain.transpose())  # cosine distance
     nearest = np.argmax(dist, axis=1)
 
-    label = train_data_labels[nearest]
-    score = (100.0 * sum(test_data_labels[:] == label))/label.shape[0]
-    return score, label
+    labels = train_data_labels[nearest]
+    score = (100.0 * sum(test_data_labels[:] == labels))/labels.shape[0]
+    return score, labels
 
 
 max_train_width, max_train_height = max(find_dimensions(page1_boxes),
@@ -149,18 +175,19 @@ train_labels = np.hstack((page1_boxes["labels"], page2_boxes["labels"], page3_bo
 test_labels = test1_boxes["labels"]
 
 
-num_features = 40
+num_features = 10
 pca_results = run_pca(num_features)
 pcatraindata = pca_results[0]
 pcatestdata = pca_results[1]
-classify_score, labelled_chars = classify(pcatraindata, train_labels, pcatestdata, test_labels, xrange(num_features))
+classify_score, labelled_chars = classify(pcatraindata, train_labels, pcatestdata, test_labels)
 
 predicted_words = find_words(labelled_chars, test1_boxes)
 correct_words = find_words(test1_boxes["labels"], test1_boxes)
 
 print classify_score
 print predicted_words
-error_corrector = ErrorCorrector()
+print "Correcting errors..."
+error_corrector = ErrorCorrector('data/count_1w.txt')
 corrected_words = error_corrector.correct_words(predicted_words, correct_words)
 print corrected_words
 
