@@ -1,14 +1,25 @@
 import scipy.linalg as la
 from ErrorCorrector import *
 
+# Can we get proper nouns from the test labels somehow?
+# possibly words that aren't in the dictionary and are capitalised - just capitalised words would catch the start
+# of sentences, but scanning the dictionary is expensive - although in this case it could be done with an if in set
+
 # npy and dat files will actually be in the same directory as the code, not in data/
 page1 = np.load('data/train1.npy')
 page2 = np.load('data/train2.npy')
 page3 = np.load('data/train3.npy')
 page4 = np.load('data/train4.npy')
 
-test1 = np.load('data/test1.4.npy')
-test2 = np.load('data/test2.4.npy')
+test1 = np.load('data/test1.npy')
+test1_2 = np.load('data/test1.2.npy')
+test1_3 = np.load('data/test1.3.npy')
+test1_4 = np.load('data/test1.4.npy')
+
+test2 = np.load('data/test2.npy')
+test2_2 = np.load('data/test2.2.npy')
+test2_3 = np.load('data/test2.3.npy')
+test2_4 = np.load('data/test2.4.npy')
 
 page1_boxes = np.loadtxt('data/train1.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                                    'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
@@ -79,6 +90,7 @@ def generate_padded_images(input_data, boxes, result_array, max_width, max_heigh
 
         padded_image = np.zeros((max_height, max_width), dtype=np.int)
         # padded_image.fill(255)
+        # filling with white actually decreases the performance considerably, for some reason
 
         padded_image[0:bottom-top, 0:right-left] = image
         result_array[i] = np.ravel(padded_image)
@@ -127,7 +139,14 @@ def run_pca(num_features, test_data, train_data):
     """
 
     eigenletters = generate_eigenletters(train_data, num_features)
+    # try:
+    #     # try and load the train data from a file
+    #     pcatrain_data = np.load('aca14st_pcatraindata.npy')
+    # except IOError:
+        # if file doesn't exist, run dimensionality reduction on it and save the result
     pcatrain_data = np.dot((train_data - np.mean(train_data)), eigenletters)
+        # np.save("aca14st_pcatraindata", pcatrain_data)
+
     pcatest_data = np.dot((test_data - np.mean(train_data)), eigenletters)
 
     return pcatrain_data, pcatest_data
@@ -154,13 +173,12 @@ def classify(train, train_data_labels, test, test_data_labels, features=None):
     train = train[:, features]
     test = test[:, features]
 
-    # Super compact implementation of nearest neighbour
-    x = np.dot(test, train.transpose())
+    dot_product = np.dot(test, train.transpose())
     modtest = np.sqrt(np.sum(test * test, axis=1))
     modtrain = np.sqrt(np.sum(train * train, axis=1))
 
-    dist = x/np.outer(modtest, modtrain.transpose())  # cosine distance
-    nearest = np.argmax(dist, axis=1)
+    cosine_dist = dot_product/np.outer(modtest, modtrain.transpose())
+    nearest = np.argmax(cosine_dist, axis=1)
 
     labels = train_data_labels[nearest]
     score = (100.0 * sum(test_data_labels[:] == labels))/labels.shape[0]
@@ -191,9 +209,9 @@ def find_max_dimensions(test_boxes):
     @param test_boxes: The bounding boxes of the testing data."""
 
     max_train_width, max_train_height = max(find_dimensions(page1_boxes),
-                                        find_dimensions(page2_boxes),
-                                        find_dimensions(page3_boxes),
-                                        find_dimensions(page4_boxes))
+                                            find_dimensions(page2_boxes),
+                                            find_dimensions(page3_boxes),
+                                            find_dimensions(page4_boxes))
 
     max_test_width, max_test_height = find_dimensions(test_boxes)
 
@@ -220,8 +238,9 @@ def evaluate_results(test_page_prepared, num_features, test_boxes, train_data, t
     predicted_words = find_words(labelled_chars, test_boxes)
     corrected_words = run_error_correction(test_boxes, predicted_words)
 
-    print classify_score
-    print predicted_words
+    # uncomment these to see the scores and predicted words before error correction
+    # print classify_score
+    # print predicted_words
     print count_correct(test_labels, corrected_words)
     print corrected_words
 
@@ -261,15 +280,43 @@ def run(test_page, test_boxes, num_features):
 
     images = np.vstack((page1_prepared, page2_prepared, page3_prepared, page4_prepared))
 
-    train_labels = np.hstack((page1_boxes["labels"], page2_boxes["labels"], page3_boxes["labels"], page4_boxes["labels"]))
+    train_labels = np.hstack((page1_boxes["labels"],
+                              page2_boxes["labels"],
+                              page3_boxes["labels"],
+                              page4_boxes["labels"]))
+
     test_labels = test_boxes["labels"]
 
     evaluate_results(test_page_prepared, num_features, test_boxes, images, train_labels, test_labels)
 
 
+print "Trial 1: No noise: "
+run(test1, test1_boxes, 40)
+run(test2, test2_boxes, 40)
+
+print "Trial 2: Noisy Data: "
+run(test1_2, test1_boxes, 40)
+run(test1_3, test1_boxes, 40)
+run(test1_4, test1_boxes, 40)
+run(test2, test2_boxes, 40)
+run(test2_2, test2_boxes, 40)
+run(test2_3, test2_boxes, 40)
+run(test2_4, test2_boxes, 40)
+
+print "Trial 3: 10 Features: "
+
+print "No noise: "
 run(test1, test1_boxes, 10)
 run(test2, test2_boxes, 10)
 
+print "Noisy Data: "
+run(test1_2, test1_boxes, 10)
+run(test1_3, test1_boxes, 10)
+run(test1_4, test1_boxes, 10)
+run(test2, test2_boxes, 10)
+run(test2_2, test2_boxes, 10)
+run(test2_3, test2_boxes, 10)
+run(test2_4, test2_boxes, 10)
 
 
 
