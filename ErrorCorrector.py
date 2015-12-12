@@ -28,19 +28,18 @@ class ErrorCorrector:
     def __get_nearest_words(self, word1, dictionary, edit_threshold):
 
         """Given a word, find the nearest words (within 1 or 2 edits) by edit distance."""
-        # need to prioritise edit distance 1 words before 2 and 3, and only then consider frequency
-        # within a set of equal edit distance words
         nearest_words = []
         for word in dictionary:
             edit_distance = self.__calculate_edit_distance(word1.lower(), str(word))
-            if edit_distance <= edit_threshold and len(str(word)) == len(word1):  # edit distance threshold
+            if edit_distance <= edit_threshold and len(str(word)) == len(word1):
+                # only need to consider same length words as we know where the words end.
                 nearest_words.append(str(word))
         return nearest_words
 
     @staticmethod
     def __get_highest_freq_word(words, dictionary):
 
-        """Given a list of words, return the one with the highest frequency in the English language."""
+        """Given a list of words, return the one with the highest frequency in the dictionary."""
         for freq_word in dictionary:
             for word in words:
                 if str(word) == str(freq_word):
@@ -50,28 +49,28 @@ class ErrorCorrector:
 
     def correct_words(self, predicted_words, correct_words, edit_distance):
 
-        """Correct either a single word or a list of words."""
+        """Correct either a single word or a list of words.
+        @param predicted_words: Words from the classifier's labels.
+        @param correct_words: Words from the correct labels of the test data.
+        @param edit_distance: The edit distance threshold for __get_nearest_words()."""
 
-        corrected_words = []
-
+        # if correcting only one word
         if type(predicted_words) is not list:
             if predicted_words not in correct_words:
                 near_words = self.__get_nearest_words(predicted_words.lower(), self.dictionary, edit_distance)
                 if len(near_words) != 0:
+                    # if there are nearby words, return the highest frequency word
                     return self.__get_highest_freq_word(near_words, self.dictionary)
                 else:
+                    # otherwise return the original
                     return predicted_words
-            else:
-                return predicted_words
         else:
-            for word in predicted_words:
-                if word not in correct_words:
-                    near_words = self.__get_nearest_words(word.lower(), self.dictionary, edit_distance)
+            # if correcting a list of words
+            for i in xrange(len(predicted_words)):
+                if predicted_words[i] not in correct_words:
+                    near_words = self.__get_nearest_words(predicted_words[i].lower(), self.dictionary, edit_distance)
                     if len(near_words) != 0:
-                        corrected_words.append(self.__get_highest_freq_word(near_words, self.dictionary))
-                    else:
-                        corrected_words.append(word)
-                else:
-                    corrected_words.append(word)
+                        # if there are nearby words, change the word being corrected to the highest frequency word
+                        predicted_words[i] = (self.__get_highest_freq_word(near_words, self.dictionary))
 
-        return corrected_words
+        return predicted_words

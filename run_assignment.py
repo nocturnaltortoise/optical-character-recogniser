@@ -232,7 +232,6 @@ def evaluate_results(test_page_prepared, num_features, test_boxes, train_data, t
     predicted_words = find_words(labelled_chars, test_boxes)
     corrected_words = run_error_correction(test_boxes, predicted_words)
 
-    # uncomment these to see the scores and predicted words before error correction
     print "Original score: %f" % classify_score
     print "Before error correction: %s" % predicted_words
     print "Error corrected score: %f" % count_correct(test_labels, corrected_words)
@@ -248,9 +247,8 @@ def run_error_correction(test_boxes, predicted_words):
     """
     correct_words = find_words(test_boxes["labels"], test_boxes)
 
-    # count_big.txt is a list of words created from stitching together several books from Project Gutenberg,
-    # courtesy of Peter Norvig.
     error_corrector = ErrorCorrector('count_big.txt')
+
     # run the error correction for 1 edit distance
     corrected_words = error_corrector.correct_words(predicted_words, correct_words, 1)
 
@@ -326,13 +324,3 @@ print "Test 2.3"
 run(test2_3, test2_boxes, 10)
 print "Test 2.4"
 run(test2_4, test2_boxes, 10)
-
-
-
-
-
-
-
-
-
-
