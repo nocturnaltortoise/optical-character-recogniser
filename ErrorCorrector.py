@@ -6,8 +6,8 @@ class ErrorCorrector:
     def __init__(self, frequency_dictionary_path):
         self.common_words = np.loadtxt(frequency_dictionary_path, dtype={'names': ('word', 'frequency'),
                                                                          'formats': ('S20', np.int)})
+        # sort the dictionary by frequency, in descending order
         self.common_words = np.sort(self.common_words, order='frequency')[::-1]
-        # self.common_words = sorted(self.common_words, reverse=True, key=lambda word: word[1])
         self.dictionary = self.common_words["word"]
 
     @staticmethod
@@ -26,7 +26,7 @@ class ErrorCorrector:
 
     def __get_nearest_words(self, word1, dictionary, edit_threshold):
 
-        """Given a word, find the nearest words (within 3 edits) by edit distance."""
+        """Given a word, find the nearest words (within 1 or 2 edits) by edit distance."""
         # need to prioritise edit distance 1 words before 2 and 3, and only then consider frequency
         # within a set of equal edit distance words
         nearest_words = []
@@ -48,6 +48,9 @@ class ErrorCorrector:
                     return word
 
     def correct_words(self, predicted_words, correct_words, edit_distance):
+
+        """Correct either a single word or a list of words."""
+
         corrected_words = []
 
         if type(predicted_words) is not list:
