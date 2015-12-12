@@ -1,9 +1,5 @@
-import numpy as np
 import scipy.linalg as la
 from ErrorCorrector import *
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import time
 
 # npy and dat files will actually be in the same directory as the code, not in data/
 page1 = np.load('data/train1.npy')
@@ -11,8 +7,8 @@ page2 = np.load('data/train2.npy')
 page3 = np.load('data/train3.npy')
 page4 = np.load('data/train4.npy')
 
-test1 = np.load('data/test1.npy')
-test2 = np.load('data/test2.npy')
+test1 = np.load('data/test1.4.npy')
+test2 = np.load('data/test2.4.npy')
 
 page1_boxes = np.loadtxt('data/train1.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                                    'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
@@ -29,6 +25,8 @@ test2_boxes = np.loadtxt('data/test2.dat', dtype={'names': ('labels', 'left', 'b
 
 
 def find_words(chars, boxes):
+
+    """Finds the words in an array of characters using the bounding box data."""
     words = []
     for i in xrange(boxes.shape[0]):
         words.append(chars[i])
@@ -80,7 +78,7 @@ def generate_padded_images(input_data, boxes, result_array, max_width, max_heigh
         image = np.reshape(input_data[top:bottom, left:right], (top-bottom, right-left))
 
         padded_image = np.zeros((max_height, max_width), dtype=np.int)
-        padded_image.fill(255)
+        # padded_image.fill(255)
 
         padded_image[0:bottom-top, 0:right-left] = image
         result_array[i] = np.ravel(padded_image)
@@ -89,6 +87,14 @@ def generate_padded_images(input_data, boxes, result_array, max_width, max_heigh
 
 
 def prepare_images(page_data, page_boxes, max_width, max_height):
+
+    """Creates an empty matrix of the correct size, uses generate_padded_images to get the flattened feature vectors.
+    @param page_data: the whole page of characters to be prepared.
+    @param page_boxes: the bounding boxes for that page.
+    @param max_width: the maximum width of all of the testing and training data.
+    @param max_height: the maximum height of all of the testing and training data.
+    """
+
     empty_images = np.zeros((page_boxes.shape[0], max_width * max_height), dtype=np.int)
     page_images = generate_padded_images(page_data, page_boxes, empty_images, max_width, max_height)
     return page_images
@@ -109,11 +115,20 @@ def generate_eigenletters(train_data, feature_number):
     return eigenvectors
 
 
-def run_pca(num_features):
-    print "Running PCA..."
-    eigenletters = generate_eigenletters(images, num_features)
-    pcatrain_data = np.dot((images - np.mean(images)), eigenletters)
-    pcatest_data = np.dot((test_page1_prepared - np.mean(images)), eigenletters)
+def run_pca(num_features, test_data, train_data):
+
+    """Takes the number of axes and some testing and training data and uses PCA to reduce the dimensions of that data to
+    the number of features specified.
+
+    Args
+    @param num_features: Number of features to select with PCA
+    @param test_data: Test data to be reduced.
+    @param train_data: Train data to be reduced.
+    """
+
+    eigenletters = generate_eigenletters(train_data, num_features)
+    pcatrain_data = np.dot((train_data - np.mean(train_data)), eigenletters)
+    pcatest_data = np.dot((test_data - np.mean(train_data)), eigenletters)
 
     return pcatrain_data, pcatest_data
 
@@ -152,52 +167,116 @@ def classify(train, train_data_labels, test, test_data_labels, features=None):
     return score, labels
 
 
-max_train_width, max_train_height = max(find_dimensions(page1_boxes),
+def count_correct(correct_labels, corrected_words):
+
+    """Processes a list of words and counts the number of characters matching another list of characters.
+    @param correct_labels: Labels from the test data.
+    @param corrected_words: List of words "corrected" by error correction.
+    """
+
+    correct_count = 0
+    for i in xrange(len(corrected_words)):
+        corrected_words_characters = "".join(corrected_words)
+
+    for i in xrange(len(corrected_words_characters)):
+        if corrected_words_characters[i] == correct_labels[i]:
+            correct_count += 1
+
+    return 100.0 * correct_count / len(corrected_words_characters)
+
+
+def find_max_dimensions(test_boxes):
+
+    """Finds the maximum dimensions of all of the data (both test and training).
+    @param test_boxes: The bounding boxes of the testing data."""
+
+    max_train_width, max_train_height = max(find_dimensions(page1_boxes),
                                         find_dimensions(page2_boxes),
                                         find_dimensions(page3_boxes),
                                         find_dimensions(page4_boxes))
 
-max_test_width, max_test_height = find_dimensions(test1_boxes)
+    max_test_width, max_test_height = find_dimensions(test_boxes)
 
-max_width, max_height = max((max_train_width, max_train_height), (max_test_width, max_test_height))
-
-page1_prepared = prepare_images(page1, page1_boxes, max_width, max_height)
-page2_prepared = prepare_images(page2, page2_boxes, max_width, max_height)
-page3_prepared = prepare_images(page3, page3_boxes, max_width, max_height)
-page4_prepared = prepare_images(page4, page4_boxes, max_width, max_height)
-
-images = np.vstack((page1_prepared, page2_prepared, page3_prepared, page4_prepared))
-
-test_page1_prepared = prepare_images(test1, test1_boxes, max_width, max_height)
-# test_page2_prepared = prepare_images(test2, test2_boxes, max_width, max_height)
-
-train_labels = np.hstack((page1_boxes["labels"], page2_boxes["labels"], page3_boxes["labels"], page4_boxes["labels"]))
-test_labels = test1_boxes["labels"]
+    max_width, max_height = max((max_train_width, max_train_height), (max_test_width, max_test_height))
+    return max_width, max_height
 
 
-num_features = 10
-pca_results = run_pca(num_features)
-pcatraindata = pca_results[0]
-pcatestdata = pca_results[1]
-classify_score, labelled_chars = classify(pcatraindata, train_labels, pcatestdata, test_labels)
+def evaluate_results(test_page_prepared, num_features, test_boxes, train_data, train_labels, test_labels):
 
-predicted_words = find_words(labelled_chars, test1_boxes)
-correct_words = find_words(test1_boxes["labels"], test1_boxes)
+    """Given the labels, number of PCA features, testing and training data,
+    runs PCA, the classifier, and error correction, and prints out results.
+    @param test_page_prepared: The test data to use.
+    @param num_features: Number of dimensions to reduce the data to with PCA.
+    @param test_boxes: Bounding boxes for the test data.
+    @param train_data: The training data to use.
+    @param train_labels: The labels of the training data.
+    @param test_labels: The labels of the testing data.
+    """
 
-print classify_score
-print predicted_words
-print "Correcting errors..."
-error_corrector = ErrorCorrector('data/count_1w.txt')
-corrected_words = error_corrector.correct_words(predicted_words, correct_words)
-print corrected_words
+    pca_results = run_pca(num_features, test_page_prepared, train_data)
+    pcatraindata = pca_results[0]
+    pcatestdata = pca_results[1]
+    classify_score, labelled_chars = classify(pcatraindata, train_labels, pcatestdata, test_labels)
+    predicted_words = find_words(labelled_chars, test_boxes)
+    corrected_words = run_error_correction(test_boxes, predicted_words)
+
+    print classify_score
+    print predicted_words
+    print count_correct(test_labels, corrected_words)
+    print corrected_words
 
 
-def count_correct():
-    correct_count = 0
+def run_error_correction(test_boxes, predicted_words):
+
+    """Attempts to correct errors on a list of words.
+    @param test_boxes: The bounding boxes of the test data.
+    @param predicted_words: A list of words created from the labels the classifier identified, and the bounding boxes.
+    """
+    correct_words = find_words(test_boxes["labels"], test_boxes)
+
+    # count_big.txt is a list of words created from stitching together several books from Project Gutenberg,
+    # courtesy of Peter Norvig.
+    error_corrector = ErrorCorrector('data/count_big.txt')
+    # run the error correction for 1 edit distance
+    corrected_words = error_corrector.correct_words(predicted_words, correct_words, 1)
+
+    # for every remaining incorrect word, run the error corrector again, with a higher edit distance
     for i in xrange(len(corrected_words)):
-        if corrected_words[i] == correct_words[i]:
-            correct_count += 1
+        if corrected_words[i] != correct_words[i]:
+            corrected_words[i] = error_corrector.correct_words(corrected_words[i], correct_words, 2)
 
-    return 100.0 * correct_count / len(correct_words)
+    return corrected_words
 
-print count_correct()
+
+def run(test_page, test_boxes, num_features):
+
+    width, height = find_max_dimensions(test_boxes)
+
+    page1_prepared = prepare_images(page1, page1_boxes, width, height)
+    page2_prepared = prepare_images(page2, page2_boxes, width, height)
+    page3_prepared = prepare_images(page3, page3_boxes, width, height)
+    page4_prepared = prepare_images(page4, page4_boxes, width, height)
+
+    test_page_prepared = prepare_images(test_page, test_boxes, width, height)
+
+    images = np.vstack((page1_prepared, page2_prepared, page3_prepared, page4_prepared))
+
+    train_labels = np.hstack((page1_boxes["labels"], page2_boxes["labels"], page3_boxes["labels"], page4_boxes["labels"]))
+    test_labels = test_boxes["labels"]
+
+    evaluate_results(test_page_prepared, num_features, test_boxes, images, train_labels, test_labels)
+
+
+run(test1, test1_boxes, 10)
+run(test2, test2_boxes, 10)
+
+
+
+
+
+
+
+
+
+
+
