@@ -4,8 +4,9 @@ import numpy as np
 class ErrorCorrector:
 
     def __init__(self, frequency_dictionary_path):
-        self.common_words = np.loadtxt(frequency_dictionary_path, dtype={'names': ('word', 'frequency'),
-                                                                         'formats': ('S20', np.int)})
+        self.common_words = np.loadtxt(frequency_dictionary_path,
+                                       dtype={'names': ('word', 'frequency'),
+                                              'formats': ('S20', np.int)})
         # sort the dictionary by frequency, in descending order
         self.common_words = np.sort(self.common_words, order='frequency')[::-1]
         self.dictionary = self.common_words["word"]

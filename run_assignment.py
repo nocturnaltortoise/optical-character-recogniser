@@ -21,18 +21,24 @@ test2_2 = np.load('data/test2.2.npy')
 test2_3 = np.load('data/test2.3.npy')
 test2_4 = np.load('data/test2.4.npy')
 
-page1_boxes = np.loadtxt('data/train1.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                   'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page2_boxes = np.loadtxt('data/train2.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                   'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page3_boxes = np.loadtxt('data/train3.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                   'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page4_boxes = np.loadtxt('data/train4.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                   'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-test1_boxes = np.loadtxt('data/test1.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                  'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-test2_boxes = np.loadtxt('data/test2.dat', dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
-                                                  'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+page1_boxes = np.loadtxt('data/train1.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+page2_boxes = np.loadtxt('data/train2.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+page3_boxes = np.loadtxt('data/train3.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+page4_boxes = np.loadtxt('data/train4.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+test1_boxes = np.loadtxt('data/test1.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
+test2_boxes = np.loadtxt('data/test2.dat',
+                         dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
+                                'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
 
 
 def find_words(chars, boxes):
