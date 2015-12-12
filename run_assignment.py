@@ -1,42 +1,37 @@
 import scipy.linalg as la
 from ErrorCorrector import *
 
-# Can we get proper nouns from the test labels somehow?
-# possibly words that aren't in the dictionary and are capitalised - just capitalised words would catch the start
-# of sentences, but scanning the dictionary is expensive - although in this case it could be done with an if in set
+page1 = np.load('train1.npy')
+page2 = np.load('train2.npy')
+page3 = np.load('train3.npy')
+page4 = np.load('train4.npy')
 
-# npy and dat files will actually be in the same directory as the code, not in data/
-page1 = np.load('data/train1.npy')
-page2 = np.load('data/train2.npy')
-page3 = np.load('data/train3.npy')
-page4 = np.load('data/train4.npy')
+test1 = np.load('test1.npy')
+test1_2 = np.load('test1.2.npy')
+test1_3 = np.load('test1.3.npy')
+test1_4 = np.load('test1.4.npy')
 
-test1 = np.load('data/test1.npy')
-test1_2 = np.load('data/test1.2.npy')
-test1_3 = np.load('data/test1.3.npy')
-test1_4 = np.load('data/test1.4.npy')
+test2 = np.load('test2.npy')
+test2_2 = np.load('test2.2.npy')
+test2_3 = np.load('test2.3.npy')
+test2_4 = np.load('test2.4.npy')
 
-test2 = np.load('data/test2.npy')
-test2_2 = np.load('data/test2.2.npy')
-test2_3 = np.load('data/test2.3.npy')
-test2_4 = np.load('data/test2.4.npy')
-
-page1_boxes = np.loadtxt('data/train1.dat',
+page1_boxes = np.loadtxt('train1.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page2_boxes = np.loadtxt('data/train2.dat',
+page2_boxes = np.loadtxt('train2.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page3_boxes = np.loadtxt('data/train3.dat',
+page3_boxes = np.loadtxt('train3.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-page4_boxes = np.loadtxt('data/train4.dat',
+page4_boxes = np.loadtxt('train4.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-test1_boxes = np.loadtxt('data/test1.dat',
+test1_boxes = np.loadtxt('test1.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
-test2_boxes = np.loadtxt('data/test2.dat',
+test2_boxes = np.loadtxt('test2.dat',
                          dtype={'names': ('labels', 'left', 'bottom', 'right', 'top', 'word_end'),
                                 'formats': ('S1', np.int, np.int, np.int, np.int, np.int)})
 
@@ -145,14 +140,7 @@ def run_pca(num_features, test_data, train_data):
     """
 
     eigenletters = generate_eigenletters(train_data, num_features)
-    # try:
-    #     # try and load the train data from a file
-    #     pcatrain_data = np.load('aca14st_pcatraindata.npy')
-    # except IOError:
-        # if file doesn't exist, run dimensionality reduction on it and save the result
     pcatrain_data = np.dot((train_data - np.mean(train_data)), eigenletters)
-        # np.save("aca14st_pcatraindata", pcatrain_data)
-
     pcatest_data = np.dot((test_data - np.mean(train_data)), eigenletters)
 
     return pcatrain_data, pcatest_data
@@ -245,10 +233,11 @@ def evaluate_results(test_page_prepared, num_features, test_boxes, train_data, t
     corrected_words = run_error_correction(test_boxes, predicted_words)
 
     # uncomment these to see the scores and predicted words before error correction
-    # print classify_score
-    # print predicted_words
-    print count_correct(test_labels, corrected_words)
-    print corrected_words
+    print "Original score: %f" % classify_score
+    print "Before error correction: %s" % predicted_words
+    print "Error corrected score: %f" % count_correct(test_labels, corrected_words)
+    print "After error correction: %s" % corrected_words
+    print ""
 
 
 def run_error_correction(test_boxes, predicted_words):
@@ -261,7 +250,7 @@ def run_error_correction(test_boxes, predicted_words):
 
     # count_big.txt is a list of words created from stitching together several books from Project Gutenberg,
     # courtesy of Peter Norvig.
-    error_corrector = ErrorCorrector('data/count_big.txt')
+    error_corrector = ErrorCorrector('count_big.txt')
     # run the error correction for 1 edit distance
     corrected_words = error_corrector.correct_words(predicted_words, correct_words, 1)
 
@@ -297,31 +286,45 @@ def run(test_page, test_boxes, num_features):
 
 
 print "Trial 1: No noise: "
+print "Test 1"
 run(test1, test1_boxes, 40)
+print "Test 2"
 run(test2, test2_boxes, 40)
 
 print "Trial 2: Noisy Data: "
+print "Test 1.2"
 run(test1_2, test1_boxes, 40)
+print "Test 1.3"
 run(test1_3, test1_boxes, 40)
+print "Test 1.4"
 run(test1_4, test1_boxes, 40)
-run(test2, test2_boxes, 40)
+print "Test 2.2"
 run(test2_2, test2_boxes, 40)
+print "Test 2.3"
 run(test2_3, test2_boxes, 40)
+print "Test 2.4"
 run(test2_4, test2_boxes, 40)
 
 print "Trial 3: 10 Features: "
 
 print "No noise: "
+print "Test 1"
 run(test1, test1_boxes, 10)
+print "Test 2"
 run(test2, test2_boxes, 10)
 
 print "Noisy Data: "
+print "Test 1.2"
 run(test1_2, test1_boxes, 10)
+print "Test 1.3"
 run(test1_3, test1_boxes, 10)
+print "Test 1.4"
 run(test1_4, test1_boxes, 10)
-run(test2, test2_boxes, 10)
+print "Test 2.2"
 run(test2_2, test2_boxes, 10)
+print "Test 2.3"
 run(test2_3, test2_boxes, 10)
+print "Test 2.4"
 run(test2_4, test2_boxes, 10)
 
 
