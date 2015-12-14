@@ -7,11 +7,13 @@ page3 = np.load('train3.npy')
 page4 = np.load('train4.npy')
 
 test1 = np.load('test1.npy')
+test1_1 = np.load('test1.1.npy')
 test1_2 = np.load('test1.2.npy')
 test1_3 = np.load('test1.3.npy')
 test1_4 = np.load('test1.4.npy')
 
 test2 = np.load('test2.npy')
+test2_1 = np.load('test2.1.npy')
 test2_2 = np.load('test2.2.npy')
 test2_3 = np.load('test2.3.npy')
 test2_4 = np.load('test2.4.npy')
@@ -290,12 +292,16 @@ print "Test 2"
 run(test2, test2_boxes, 40)
 
 print "Trial 2: Noisy Data: "
+print "Test 1.1"
+run(test1_1, test1_boxes, 40)
 print "Test 1.2"
 run(test1_2, test1_boxes, 40)
 print "Test 1.3"
 run(test1_3, test1_boxes, 40)
 print "Test 1.4"
 run(test1_4, test1_boxes, 40)
+print "Test 2.1"
+run(test2_1, test2_boxes, 40)
 print "Test 2.2"
 run(test2_2, test2_boxes, 40)
 print "Test 2.3"
@@ -312,12 +318,16 @@ print "Test 2"
 run(test2, test2_boxes, 10)
 
 print "Noisy Data: "
+print "Test 1.1"
+run(test1_1, test1_boxes, 10)
 print "Test 1.2"
 run(test1_2, test1_boxes, 10)
 print "Test 1.3"
 run(test1_3, test1_boxes, 10)
 print "Test 1.4"
 run(test1_4, test1_boxes, 10)
+print "Test 2.1"
+run(test2_1, test2_boxes, 10)
 print "Test 2.2"
 run(test2_2, test2_boxes, 10)
 print "Test 2.3"
